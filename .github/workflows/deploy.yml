@@ -27,7 +27,7 @@ jobs:
 
       - name: Подготовка SSH
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_HOST: ${{ secrets.SERVER_IP }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
           sudo apt-get install -y sshpass
@@ -36,11 +36,11 @@ jobs:
 
       - name: Загрузка на Beget
         env:
-          SSHPASS: ${{ secrets.SSH_PASSWORD }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
+          SSHPASS: ${{ secrets.PASSWORD }}
+          SSH_HOST: ${{ secrets.SERVER_IP }}
+          SSH_USER: ${{ secrets.SERVER_USER }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
-          REMOTE_PATH: ${{ secrets.REMOTE_PATH }}
+          REMOTE_PATH: ${{ secrets.SERVER_PATH }}
         run: |
           sshpass -e rsync -rlptz --no-perms --omit-dir-times \
             -e "ssh -o PubkeyAuthentication=no -p ${SSH_PORT:-22}" \

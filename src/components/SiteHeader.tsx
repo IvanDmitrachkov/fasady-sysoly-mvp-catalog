@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { contacts } from "@/lib/catalog";
+import { MobileMenu } from "@/components/MobileMenu";
 
 const nav = [
   { href: "/catalog", label: "Каталог" },
@@ -33,7 +34,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <a href={contacts.phoneHref} className="hidden whitespace-nowrap text-sm font-semibold xl:block">
             {contacts.phone}
           </a>
@@ -43,6 +44,7 @@ export function SiteHeader() {
           >
             Заявка
           </Link>
+          <MobileMenu items={nav} phone={contacts.phone} phoneHref={contacts.phoneHref} />
         </div>
       </div>
     </header>

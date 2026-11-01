@@ -4,7 +4,7 @@ import { useRef, useState, useSyncExternalStore, type PointerEvent } from "react
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { demoNotes, type DemoNoteId } from "@/lib/demoNotes";
-import { BASE_PRICE, addonById, plusK, rub } from "@/lib/offer";
+import { addonById } from "@/lib/offer";
 
 const KEY = "fasady-demo";
 const listeners = new Set<() => void>();
@@ -49,7 +49,7 @@ export function DemoToggle() {
           href="/offer"
           className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-cocoa shadow-lg ring-1 ring-cocoa/15 transition-colors hover:bg-sand"
         >
-          Доработки и цены
+          Доработки
         </Link>
       )}
       <button
@@ -98,7 +98,7 @@ export function NotePin({ id, className = "left-3 top-3" }: { id: DemoNoteId; cl
   const n = demoNotes[id];
   const list = n.addons.map((a) => addonById(a));
   const label = list.length
-    ? `ⓘ ${plusK(Math.min(...list.map((a) => a.price)))}${list.length > 1 || list[0].unit ? " и выше" : ""}`
+    ? "ⓘ доп. модуль"
     : "ⓘ в минимуме";
 
   const onDown = (e: PointerEvent<HTMLButtonElement>) => {
@@ -152,7 +152,7 @@ export function NotePin({ id, className = "left-3 top-3" }: { id: DemoNoteId; cl
           </button>
           <p className="pr-8 text-lg font-bold">{n.title}</p>
           <p className="mt-2">{n.what}</p>
-          <p className="mt-4 text-xs font-bold uppercase tracking-wide text-cocoa/60">В минимуме · {rub(BASE_PRICE)}</p>
+          <p className="mt-4 text-xs font-bold uppercase tracking-wide text-cocoa/60">В минимуме</p>
           <p>{n.inBase}</p>
           {list.length > 0 && (
             <>
@@ -163,10 +163,7 @@ export function NotePin({ id, className = "left-3 top-3" }: { id: DemoNoteId; cl
                     <Link href={`/offer#${a.id}`} className="font-semibold underline underline-offset-2 hover:no-underline">
                       {a.title}
                     </Link>
-                    <span className="ml-2 whitespace-nowrap font-bold">
-                      {plusK(a.price)}
-                      {a.unit ? ` за ${a.unit.label}` : ""}
-                    </span>
+                    <span className="ml-2 whitespace-nowrap text-sm">доп. модуль, за отдельную плату</span>
                   </li>
                 ))}
               </ul>
@@ -178,7 +175,7 @@ export function NotePin({ id, className = "left-3 top-3" }: { id: DemoNoteId; cl
               <li key={r}>{r}</li>
             ))}
           </ul>
-          <p className="mt-4 text-xs text-cocoa/55">Цены ориентировочные, уточняются после получения материалов заказчика.</p>
+          <p className="mt-4 text-xs text-cocoa/55">Доп. модули подключаются отдельно, за отдельную плату.</p>
         </div>
       )}
     </div>

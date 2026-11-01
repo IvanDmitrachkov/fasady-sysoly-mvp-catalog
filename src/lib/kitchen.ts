@@ -1,5 +1,5 @@
 import type { ProfileId } from "./profiles";
-import { swatchById, type Finish } from "./palette";
+import { swatchById, swatchLabel, type Finish } from "./palette";
 import { facades } from "./catalog";
 
 /**
@@ -9,7 +9,7 @@ import { facades } from "./catalog";
 
 export type ColumnKind = "doors" | "drawers" | "tall";
 
-export type FacadeStyle = { profile: ProfileId; swatchId: string };
+export type FacadeStyle = { profile: ProfileId; swatchId: string; /** Пожелание к цвету при swatchId === "custom" */ note?: string };
 
 export type Column = {
   id: string;
@@ -141,13 +141,13 @@ export function facadeSummary(project: Project): FacadeRow[] {
       const sw = swatchById(p.style.swatchId);
       const w = Math.round(p.w);
       const h = Math.round(p.h);
-      const key = `${p.style.profile}|${sw.id}|${w}|${h}`;
+      const key = `${p.style.profile}|${sw.id}|${p.style.note ?? ""}|${w}|${h}`;
       const row = map.get(key);
       if (row) row.count += 1;
       else
         map.set(key, {
           name: profileName(p.style.profile),
-          swatch: `${sw.code === "Wood Color" ? "Wood" : sw.code} ${sw.name}`,
+          swatch: swatchLabel(sw, p.style.note),
           finish: project.style.finish === "gloss" ? "глянец" : "мат",
           w,
           h,

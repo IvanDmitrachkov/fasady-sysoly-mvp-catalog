@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { LeadForm } from "@/components/LeadForm";
 import { backsplashes, scenes, worktops, type KitchenScene, type Surface } from "@/lib/scenes";
-import { swatchById, swatches } from "@/lib/palette";
+import ColorPicker from "@/components/ColorPicker";
+import { DemoPhotoBadge } from "@/components/InDevelopment";
+import { swatchById } from "@/lib/palette";
 import { hexToLinear, prepare, render, type Prepared, type Target } from "@/lib/recolor";
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -133,6 +135,7 @@ function Stage({ scene }: { scene: KitchenScene }) {
             aria-hidden
             className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${prepared ? "opacity-100" : "opacity-0"}`}
           />
+          <DemoPhotoBadge className="left-3 top-3" />
           {failed && (
             <p className="absolute inset-x-0 bottom-0 bg-cocoa/80 p-3 text-center text-sm text-white">
               Не удалось загрузить примерочную. Попробуйте обновить страницу.
@@ -141,19 +144,15 @@ function Stage({ scene }: { scene: KitchenScene }) {
         </div>
 
         <div className="grid gap-8">
-          <Group title="Цвет фасадов" hint={facade ? `${facade.code} · ${facade.name}` : "Как на фото"}>
-            <SurfaceDot surface={{ id: "orig", name: "Как на фото", hex: null }} active={facadeId === null} onClick={() => setFacadeId(null)} />
-            {swatches.map((s) => (
-              <Dot key={s.id} label={`${s.code} ${s.name}`} hex={s.hex} active={s.id === facadeId} onClick={() => setFacadeId(s.id)} />
-            ))}
-          </Group>
+          <div>
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-cocoa/60">Цвет фасадов</h2>
+            <ColorPicker value={facadeId} allowCustom={false} onChange={setFacadeId} onReset={() => setFacadeId(null)} />
+          </div>
           {scene.masks2 && (
-            <Group title={scene.accentLabel ?? "Акцент"} hint={accent ? `${accent.code} · ${accent.name}` : "Как на фото"}>
-              <SurfaceDot surface={{ id: "orig", name: "Как на фото", hex: null }} active={accentId === null} onClick={() => setAccentId(null)} />
-              {swatches.map((s) => (
-                <Dot key={s.id} label={`${s.code} ${s.name}`} hex={s.hex} active={s.id === accentId} onClick={() => setAccentId(s.id)} />
-              ))}
-            </Group>
+            <div>
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-cocoa/60">{scene.accentLabel ?? "Акцент"}</h2>
+              <ColorPicker value={accentId} allowCustom={false} onChange={setAccentId} onReset={() => setAccentId(null)} />
+            </div>
           )}
           <Group title="Столешница" hint={worktop.name}>
             {worktops.map((s) => (

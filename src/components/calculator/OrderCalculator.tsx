@@ -1,13 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import ColorPicker from "@/components/ColorPicker";
 import { LeadForm } from "@/components/LeadForm";
+import { swatchById } from "@/lib/palette";
+import { facadeBySlug } from "@/lib/catalog";
 import CalcPreview from "./CalcPreview";
 import FacadeThumb from "./FacadeThumb";
 import { exportExcel } from "./exportExcel";
-import { PRICES_ARE_PLACEHOLDER, isVisible, newRow, newRowId, optionOf, params, sizeLimits, totals, type Param, type Row } from "@/lib/pricing";
+import { PRICES_ARE_PLACEHOLDER, isVisible, newRow, newRowId, optionOf, params, sizeLimits, totals, valueLabel, type Param, type Row } from "@/lib/pricing";
 import { rub } from "@/lib/offer";
+import type { ProfileId } from "@/lib/profiles";
 import { advantages } from "@/lib/catalog";
+import { useEffect } from "react";
 
 const label = "text-xs font-semibold uppercase tracking-[0.14em] text-cocoa/60";
 const input =
@@ -58,7 +63,7 @@ export default function OrderCalculator() {
   const order = () => {
     const lines = rows.map((row, i) => {
       const c = t.calcs[i];
-      const parts = params.filter((p) => isVisible(p, row.values)).map((p) => optionOf(p, row.values).label);
+      const parts = params.filter((p) => isVisible(p, row.values)).map((p) => valueLabel(p, row.values));
       return `${i + 1}. ${parts.join(", ")}, ${c.width}×${c.height} мм × ${c.qty} шт = ${rub(c.total)}`;
     });
     const header = `Калькулятор заказа. Итого ориентировочно ${rub(t.total)} (окончательно после замера).`;
@@ -140,7 +145,7 @@ export default function OrderCalculator() {
                     {params
                       .filter((p) => isVisible(p, row.values))
                       .map((p) => (
-                        <Field key={p.id} param={p} row={row} onChange={(v) => setValue(row.id, p.id, v)} />
+                        <Field key={p.id} param={p} row={row} onChange={(v) => setValue(row.id, p.id, v)} onNote={(v) => setValue(row.id, "colorNote", v)} />
                       ))}
                     <Size
                       id={`w-${row.id}`}
@@ -259,9 +264,12 @@ function Summary({
   );
 }
 
-function Field({ param, row, onChange }: { param: Param; row: Row; onChange: (v: string) => void }) {
+function Field({ param, row, onChange, onNote }: { param: Param; row: Row; onChange: (v: string) => void; onNote: (v: string) => void }) {
   const id = `${param.id}-${row.id}`;
   const current = optionOf(param, row.values);
+
+  if (param.id === "profile") return <ProfileField id={id} param={param} row={row} onChange={onChange} />;
+  if (param.id === "color") return <ColorField id={id} row={row} onChange={onChange} onNote={onNote} />;
 
   // главный выбор показываем кнопками: быстрее и нагляднее, чем выпадающий список
   if (param.id === "type") {
@@ -339,6 +347,216 @@ function Size({
         className={`${input} mt-1.5 tabular-nums ${error ? "border-red-700 focus:border-red-700" : ""}`}
       />
       {error && <p className="mt-1 text-xs font-medium text-red-700">{error}</p>}
+    </div>
+  );
+}
+
+/** Цвет: кнопка с текущим образцом, выбор из полного каталога в окне (на телефоне выезжает снизу) */
+function ColorField({ id, row, onChange, onNote }: { id: string; row: Row; onChange: (v: string) => void; onNote: (v: string) => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const swatch = swatchById(row.values.color);
+  const finish = row.values.coating === "gloss" ? "gloss" : "matte";
+  const note = row.values.colorNote ?? "";
+  const title = swatch.group === "Custom" ? `Подбор${note.trim() ? `: ${note.trim()}` : ""}` : `${swatch.code} · ${swatch.name}`;
+
+  return (
+    <div className="@xl:col-span-2">
+      <span id={`${id}-l`} className={label}>
+        Цвет
+      </span>
+      <button
+        type="button"
+        aria-labelledby={`${id}-l ${id}-v`}
+        aria-haspopup="dialog"
+        onClick={() => dialog.current?.showModal()}
+        className={`${input} mt-1.5 flex items-center gap-3 text-left hover:border-cocoa`}
+      >
+        <span
+          aria-hidden
+          className="size-8 shrink-0 rounded-lg border border-black/15"
+          style={{
+            background: [
+              finish === "gloss" ? "linear-gradient(135deg, rgba(255,255,255,.55), rgba(255,255,255,0) 45%)" : "",
+              swatch.grain ? "repeating-linear-gradient(92deg, rgba(0,0,0,.14) 0 1px, transparent 1px 5px)" : "",
+              swatch.hex,
+            ]
+              .filter(Boolean)
+              .join(", "),
+          }}
+        />
+        <span id={`${id}-v`} className="min-w-0 flex-1 truncate font-medium">
+          {title}
+        </span>
+        <span className="shrink-0 text-xs font-semibold text-taupe">Изменить</span>
+      </button>
+
+      <SheetDialog dialogRef={dialog} title="Цвет фасада">
+        <ColorPicker
+          value={swatch.id}
+          finish={finish}
+          note={note}
+          onNoteChange={onNote}
+          onChange={(v) => {
+            onChange(v);
+            if (v !== "custom") dialog.current?.close();
+          }}
+        />
+      </SheetDialog>
+    </div>
+  );
+}
+
+/** Окно выбора: по центру на компьютере, выезжает снизу на телефоне; клик по фону закрывает */
+function SheetDialog({
+  dialogRef,
+  title,
+  onClose,
+  children,
+}: {
+  dialogRef: React.RefObject<HTMLDialogElement | null>;
+  title: string;
+  onClose?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <dialog
+      ref={dialogRef}
+      aria-label={title}
+      onClose={onClose}
+      onClick={(e) => e.target === dialogRef.current && dialogRef.current?.close()}
+      className="m-auto w-[min(42rem,calc(100vw-1.5rem))] rounded-[1.75rem] bg-cream p-0 text-ink backdrop:bg-black/45 max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none"
+    >
+      <div className="max-h-[85dvh] overflow-y-auto p-5 sm:p-7" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-cocoa">{title}</h3>
+          <button
+            type="button"
+            onClick={() => dialogRef.current?.close()}
+            className="rounded-full bg-cocoa px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-taupe"
+          >
+            Готово
+          </button>
+        </div>
+        {children}
+      </div>
+    </dialog>
+  );
+}
+
+/** Снимки профилей считаются общим рендерером, пока окно открыто, в цвете и покрытии этой строки */
+function useProfileShots(open: boolean, profiles: { slug: string; profile?: ProfileId }[], swatchId: string, gloss: boolean) {
+  const [shots, setShots] = useState<{ key: string; urls: Record<string, string | null> } | null>(null);
+  const key = `${swatchId}|${gloss}`;
+  const slugs = profiles.map((p) => p.slug).join(",");
+
+  useEffect(() => {
+    if (!open) return;
+    const id = setTimeout(async () => {
+      const { snapshotFacade } = await import("@/lib/facadeSnapshot");
+      const swatch = swatchById(swatchId);
+      const urls: Record<string, string | null> = {};
+      for (const f of profiles) {
+        if (f.profile) urls[f.slug] = snapshotFacade({ profile: f.profile, width: 450, height: 700, thickness: 19, swatch, finish: gloss ? "gloss" : "matte" });
+      }
+      setShots({ key, urls });
+    }, 50);
+    return () => clearTimeout(id);
+    // slugs: профили задаются списком и не меняются между рендерами
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, key, slugs]);
+
+  return shots?.key === key ? shots.urls : null;
+}
+
+function ProfileCard({ f, url, ready, active, onClick }: { f: { slug: string; name: string }; url?: string | null; ready: boolean; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      className="group flex flex-col gap-2 text-left focus-visible:outline-none"
+    >
+      <span
+        className={`relative block aspect-[4/5] overflow-hidden rounded-2xl bg-gradient-to-b from-[#4a3f36] to-cocoa transition-transform duration-200 group-hover:scale-[1.02] group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-cocoa ${
+          active ? "ring-2 ring-taupe ring-offset-2 ring-offset-cream" : "ring-1 ring-black/10"
+        }`}
+      >
+        {ready ? (
+          url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={url} alt={`Фрезеровка «${f.name}»`} className="absolute inset-0 h-full w-full object-contain" />
+          ) : (
+            <span className="grid h-full place-items-center text-[11px] text-white/50">3D…</span>
+          )
+        ) : (
+          <span className="absolute inset-0 grid place-items-center bg-sand px-2 text-center text-[11px] font-semibold leading-tight text-cocoa/60">
+            В разработке
+          </span>
+        )}
+        {ready && <span className="absolute right-1.5 top-1.5 rounded-full bg-black/35 px-1.5 py-0.5 text-[10px] font-medium text-white/80 backdrop-blur">3D</span>}
+      </span>
+      <span className={`text-sm ${active ? "font-semibold text-cocoa" : "text-cocoa/75"}`}>{f.name}</span>
+    </button>
+  );
+}
+
+/** Фрезеровка: поле с миниатюрой и окно с картинками всех профилей */
+function ProfileField({ id, param, row, onChange }: { id: string; param: Param; row: Row; onChange: (v: string) => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
+  const current = optionOf(param, row.values);
+  const facades = useMemo(() => param.options.map((o) => facadeBySlug(o.id)!).filter(Boolean), [param.options]);
+  const gloss = row.values.coating === "gloss";
+  const urls = useProfileShots(open, facades, row.values.color, gloss);
+  const curFacade = useMemo(() => facades.filter((f) => f.slug === current.id), [facades, current.id]);
+  const thumb = useProfileShots(true, curFacade, row.values.color, gloss);
+
+  return (
+    <div className="@xl:col-span-2">
+      <span id={`${id}-l`} className={label}>
+        {param.label}
+      </span>
+      <button
+        type="button"
+        aria-labelledby={`${id}-l ${id}-v`}
+        aria-haspopup="dialog"
+        onClick={() => {
+          setOpen(true);
+          dialog.current?.showModal();
+        }}
+        className={`${input} mt-1.5 flex items-center gap-3 text-left hover:border-cocoa`}
+      >
+        <span className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-gradient-to-b from-[#4a3f36] to-cocoa">
+          {thumb?.[current.id] ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumb[current.id]!} alt="" className="absolute inset-0 h-full w-full object-contain" />
+          ) : null}
+        </span>
+        <span id={`${id}-v`} className="min-w-0 flex-1 truncate font-medium">
+          {current.label}
+        </span>
+        <span className="shrink-0 text-xs font-semibold text-taupe">Изменить</span>
+      </button>
+
+      <SheetDialog dialogRef={dialog} title="Фрезеровка" onClose={() => setOpen(false)}>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4" role="radiogroup" aria-label={param.label}>
+          {facades.map((f) => (
+            <ProfileCard
+              key={f.slug}
+              f={f}
+              ready={!!f.profile}
+              url={urls?.[f.slug]}
+              active={f.slug === current.id}
+              onClick={() => {
+                onChange(f.slug);
+                dialog.current?.close();
+              }}
+            />
+          ))}
+        </div>
+        <p className="mt-4 text-xs text-cocoa/50">Показан фасад в выбранном цвете и покрытии. Размеры профилей приблизительные.</p>
+      </SheetDialog>
     </div>
   );
 }

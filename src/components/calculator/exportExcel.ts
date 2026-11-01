@@ -1,5 +1,5 @@
 import type { SheetData } from "write-excel-file/browser";
-import { PRICES_ARE_PLACEHOLDER, isVisible, optionOf, params, totals, type Row } from "@/lib/pricing";
+import { PRICES_ARE_PLACEHOLDER, isVisible, optionOf, params, totals, valueLabel, type Row } from "@/lib/pricing";
 
 const HEADER_BG = "#ebe2d3";
 
@@ -31,7 +31,7 @@ export async function exportExcel(rows: Row[]) {
       const cells = params.map((p) => {
         if (!isVisible(p, row.values)) return { value: "–", align: "center" as const };
         const o = optionOf(p, row.values);
-        return o.hex ? { value: o.label, backgroundColor: o.hex, textColor: textOn(o.hex) } : { value: o.label };
+        return o.hex ? { value: valueLabel(p, row.values), backgroundColor: o.hex, textColor: textOn(o.hex) } : { value: valueLabel(p, row.values) };
       });
       return [
         { value: i + 1, type: Number, align: "center" as const },

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import OfferCalculator from "@/components/offer/OfferCalculator";
+import ReviewMap from "@/components/offer/ReviewMap";
 
 export const metadata: Metadata = {
   title: "Доработки и стоимость",
@@ -17,6 +18,7 @@ export default function OfferPage() {
         Начните с минимума и добавляйте только то, что нужно сейчас. Каждая доработка независима, их можно подключать по
         одной, когда появятся материалы и задачи.
       </p>
+      <ReviewMap />
       <OfferCalculator />
     </div>
   );

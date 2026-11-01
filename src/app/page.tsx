@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LeadForm } from "@/components/LeadForm";
 import { NotePin } from "@/components/demo/Demo";
+import { DemoPhotoBadge } from "@/components/InDevelopment";
 import { advantages, categories, facades } from "@/lib/catalog";
 import { priceHint } from "@/lib/priceHints";
 
@@ -47,6 +48,7 @@ export default function Home() {
             sizes="(min-width:1280px) 1240px, 100vw"
             className="object-cover object-[50%_42%]"
           />
+          <DemoPhotoBadge className="right-4 top-4" />
           <div className="absolute inset-0 bg-gradient-to-t from-cocoa/85 via-cocoa/35 to-cocoa/10" />
           <div className="absolute inset-0 bg-gradient-to-r from-cocoa/55 via-transparent to-transparent" />
 

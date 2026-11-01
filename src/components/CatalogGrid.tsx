@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { categories, isReady, type CategoryId, type Facade } from "@/lib/catalog";
-import { DevPlaceholder } from "@/components/InDevelopment";
+import { DemoPhotoBadge, DevPlaceholder } from "@/components/InDevelopment";
 import { priceHint } from "@/lib/priceHints";
 
 const categoryName = (f: Facade) => categories.find((c) => c.id === f.category)?.name ?? "";
@@ -52,6 +52,7 @@ export function CatalogGrid({ items }: { items: Facade[] }) {
                       sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
+                    <DemoPhotoBadge />
                     <span className="absolute left-3 top-3 rounded-full bg-cream/90 px-3 py-1 text-[11px] font-semibold text-cocoa backdrop-blur">
                       3D-просмотр
                     </span>

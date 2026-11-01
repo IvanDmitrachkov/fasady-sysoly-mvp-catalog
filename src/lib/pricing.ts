@@ -104,7 +104,7 @@ export const params: Param[] = [
   {
     id: "color",
     label: "Цвет",
-    options: swatches.map((s) => ({ id: s.id, label: `${s.code} · ${s.name}`, hex: s.hex })),
+    options: swatches.map((s) => ({ id: s.id, label: s.group === "Custom" ? "Подбор по образцу" : `${s.code} · ${s.name}`, hex: s.hex })),
   },
   {
     id: "effect",
@@ -170,6 +170,10 @@ export const defaultValues = (): Values => {
 
 /** id первой строки фиксирован: Date.now() в рендере давал бы разные id на сервере и в браузере */
 export const newRow = (id: string = newRowId()): Row => ({ id, values: defaultValues(), width: 450, height: 700, qty: 1 });
+
+/** Подпись значения для заявки и Excel: у «Подбора» добавляется пожелание клиента (values.colorNote) */
+export const valueLabel = (p: Param, v: Values) =>
+  p.id === "color" && v.color === "custom" ? `Подбор${v.colorNote?.trim() ? `: ${v.colorNote.trim()}` : ""}` : optionOf(p, v).label;
 
 export const optionOf = (p: Param, v: Values) => p.options.find((o) => o.id === v[p.id]) ?? p.options[0];
 

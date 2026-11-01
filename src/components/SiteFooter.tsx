@@ -38,6 +38,9 @@ export function SiteFooter() {
           </ul>
         </div>
       </div>
+      <p className="mx-auto mt-4 max-w-7xl px-2 text-center text-xs text-cocoa/55">
+        Демо-версия: картинки, тексты и цвета временные. <Link href="/offer#review" className="underline underline-offset-2 hover:no-underline">Что готово и что будет улучшено</Link>
+      </p>
     </footer>
   );
 }

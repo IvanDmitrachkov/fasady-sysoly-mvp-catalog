@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import FacadeConfigurator from "@/components/viewer/FacadeConfigurator";
 import { LeadForm } from "@/components/LeadForm";
 import { NotePin } from "@/components/demo/Demo";
-import { DevPlaceholder, IN_DEVELOPMENT, NOT_IN_DEMO } from "@/components/InDevelopment";
+import { DemoPhotoBadge, DevPlaceholder, IN_DEVELOPMENT, NOT_IN_DEMO } from "@/components/InDevelopment";
 import { categoryById, facadeBySlug, facades, isReady, limits } from "@/lib/catalog";
 import { priceHint } from "@/lib/priceHints";
 
@@ -120,6 +120,7 @@ export default async function FacadePage({ params }: PageProps<"/catalog/[slug]"
                   sizes="(min-width:640px) 50vw, 100vw"
                   className="object-cover"
                 />
+                <DemoPhotoBadge />
               </li>
             ))}
           </ul>

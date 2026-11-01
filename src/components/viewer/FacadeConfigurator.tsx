@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { finishes, swatchById, swatches, type Finish } from "@/lib/palette";
+import ColorPicker, { FinishToggle } from "@/components/ColorPicker";
+import { swatchById, type Finish } from "@/lib/palette";
 import type { ProfileId } from "@/lib/profiles";
 
 const FacadeViewer = dynamic(() => import("./FacadeViewer"), {
@@ -37,6 +38,7 @@ export default function FacadeConfigurator({
   onChange,
 }: FacadeConfiguratorProps) {
   const [swatchId, setSwatchId] = useState("ral-7040");
+  const [note, setNote] = useState("");
   const [finish, setFinish] = useState<Finish>("matte");
   const [width, setWidth] = useState(initial.width);
   const [height, setHeight] = useState(initial.height);
@@ -63,60 +65,33 @@ export default function FacadeConfigurator({
           Потяните, чтобы повернуть
         </span>
         <span className="pointer-events-none absolute bottom-4 left-4 text-xs text-white/70">
-          {swatch.code} · {swatch.name}
+          {swatch.group === "Custom" ? `Подбор${note.trim() ? `: ${note.trim()}` : ""}` : `${swatch.code} · ${swatch.name}`}
         </span>
       </div>
 
       <div>
-        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-cocoa/60">Цвет</span>
-          <span className="text-xs text-cocoa/50">Цвет на экране условный — смотрите образцы</span>
-        </div>
-        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Цвет фасада">
-          {swatches.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              role="radio"
-              aria-checked={s.id === swatchId}
-              aria-label={`${s.code} ${s.name}`}
-              title={`${s.code} · ${s.name}`}
-              onClick={() => {
-                setSwatchId(s.id);
-                emit({ swatchId: s.id });
-              }}
-              className={`size-9 rounded-full border transition-transform duration-200 hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cocoa ${
-                s.id === swatchId ? "scale-110 border-cocoa ring-2 ring-taupe ring-offset-2 ring-offset-cream" : "border-black/15"
-              }`}
-              style={{ background: s.hex }}
-            />
-          ))}
-        </div>
+        <div className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-cocoa/60">Цвет</div>
+        <ColorPicker
+          value={swatchId}
+          finish={finish}
+          note={note}
+          onNoteChange={setNote}
+          onChange={(id) => {
+            setSwatchId(id);
+            emit({ swatchId: id });
+          }}
+        />
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-        <div>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-cocoa/60">Покрытие</div>
-          <div className="inline-flex rounded-full border border-cocoa/15 bg-sand p-1" role="radiogroup" aria-label="Покрытие">
-            {finishes.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                role="radio"
-                aria-checked={f.id === finish}
-                onClick={() => {
-                  setFinish(f.id);
-                  emit({ finish: f.id });
-                }}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                  f.id === finish ? "bg-cocoa text-white" : "text-cocoa/70 hover:text-cocoa"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div>
+        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-cocoa/60">Покрытие</div>
+        <FinishToggle
+          value={finish}
+          onChange={(f) => {
+            setFinish(f);
+            emit({ finish: f });
+          }}
+        />
       </div>
 
       {sizes && (

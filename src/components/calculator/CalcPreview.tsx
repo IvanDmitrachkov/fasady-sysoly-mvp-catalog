@@ -65,7 +65,7 @@ export default function CalcPreview({ row, calc, index }: { row: Row; calc: RowC
         </p>
         <p className="mt-0.5 flex items-center gap-2 text-xs text-white/75">
           <span className="size-3 rounded-full border border-white/40" style={{ background: swatch.hex }} />
-          {swatch.code === "Wood Color" ? "Wood Color" : swatch.code} · {swatch.name}, {gloss ? "глянец" : "мат"}
+          {swatch.group === "Custom" ? `Подбор${row.values.colorNote?.trim() ? `: ${row.values.colorNote.trim()}` : ""}` : `${swatch.code} · ${swatch.name}`}, {gloss ? "глянец" : "мат"}
         </p>
       </div>
     </div>

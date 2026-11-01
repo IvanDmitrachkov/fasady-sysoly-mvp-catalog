@@ -36,3 +36,14 @@ export function DemoNotice({ children }: { children: React.ReactNode }) {
     </p>
   );
 }
+
+/** Метка на временных фото: картинки в демо заменим на финальные */
+export function DemoPhotoBadge({ className = "bottom-3 right-3" }: { className?: string }) {
+  return (
+    <span
+      className={`pointer-events-none absolute z-10 rounded-full bg-amber-200/95 px-2.5 py-1 text-[10px] font-semibold text-cocoa shadow-sm ${className}`}
+    >
+      Демо-фото
+    </span>
+  );
+}

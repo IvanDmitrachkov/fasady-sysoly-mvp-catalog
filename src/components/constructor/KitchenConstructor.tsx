@@ -19,7 +19,8 @@ import {
   type FacadeStyle,
   type Project,
 } from "@/lib/kitchen";
-import { finishes, swatchById, swatches } from "@/lib/palette";
+import ColorPicker, { FinishToggle } from "@/components/ColorPicker";
+import { swatches, type Finish } from "@/lib/palette";
 import { profiles } from "@/lib/profiles";
 
 const STORAGE_KEY = "fasady-kitchen-v1";
@@ -154,22 +155,9 @@ export default function KitchenConstructor() {
 
           <section className="rounded-[1.5rem] bg-sand p-6">
             <h2 className={label}>Фасады всей кухни</h2>
-            <StylePicker value={project.style} onChange={(s) => setStyle(s)} />
-            <div className="mt-5 inline-flex rounded-full border border-cocoa/15 bg-cream p-1" role="radiogroup" aria-label="Покрытие">
-              {finishes.map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={f.id === project.style.finish}
-                  onClick={() => setStyle({ finish: f.id })}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    f.id === project.style.finish ? "bg-cocoa text-white" : "text-cocoa/70 hover:text-cocoa"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
+            <StylePicker value={project.style} finish={project.style.finish} onChange={(s) => setStyle(s)} />
+            <div className="mt-5">
+              <FinishToggle tone="sand" value={project.style.finish} onChange={(finish) => setStyle({ finish })} />
             </div>
           </section>
 
@@ -253,7 +241,7 @@ export default function KitchenConstructor() {
                   Свой фасад у этого модуля
                 </label>
                 {selected.override && (
-                  <StylePicker value={selected.override} onChange={(s) => patchColumn(selected.id, { override: { ...selected.override!, ...s } })} />
+                  <StylePicker value={selected.override} finish={project.style.finish} onChange={(s) => patchColumn(selected.id, { override: { ...selected.override!, ...s } })} />
                 )}
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => moveColumn(selected.id, -1)} className={chip(false)} aria-label="Сдвинуть влево">
@@ -340,7 +328,15 @@ function shortKind(kind: ColumnKind) {
   return kind === "doors" ? "Дверцы" : kind === "drawers" ? "Ящики" : "Пенал";
 }
 
-function StylePicker({ value, onChange }: { value: FacadeStyle; onChange: (patch: Partial<FacadeStyle>) => void }) {
+function StylePicker({
+  value,
+  finish,
+  onChange,
+}: {
+  value: FacadeStyle;
+  finish: Finish;
+  onChange: (patch: Partial<FacadeStyle>) => void;
+}) {
   return (
     <div className="mt-3 grid gap-4">
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Фрезеровка">
@@ -357,28 +353,14 @@ function StylePicker({ value, onChange }: { value: FacadeStyle; onChange: (patch
           </button>
         ))}
       </div>
-      <div>
-        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Цвет">
-          {swatches.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              role="radio"
-              aria-checked={s.id === value.swatchId}
-              aria-label={`${s.code} ${s.name}`}
-              title={`${s.code} · ${s.name}`}
-              onClick={() => onChange({ swatchId: s.id })}
-              className={`size-8 rounded-full border transition-transform duration-200 hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cocoa ${
-                s.id === value.swatchId ? "scale-110 border-cocoa ring-2 ring-taupe ring-offset-2 ring-offset-sand" : "border-black/15"
-              }`}
-              style={{ background: s.hex }}
-            />
-          ))}
-        </div>
-        <p className="mt-2 text-xs text-cocoa/55">
-          {swatchById(value.swatchId).code} · {swatchById(value.swatchId).name}. Цвет на экране условный.
-        </p>
-      </div>
+      <ColorPicker
+        ringOffset="sand"
+        value={value.swatchId}
+        finish={finish}
+        note={value.note}
+        onChange={(swatchId) => onChange({ swatchId })}
+        onNoteChange={(note) => onChange({ note })}
+      />
     </div>
   );
 }

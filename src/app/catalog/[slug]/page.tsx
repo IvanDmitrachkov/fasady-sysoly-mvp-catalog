@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import FacadeConfigurator from "@/components/viewer/FacadeConfigurator";
 import { LeadForm } from "@/components/LeadForm";
 import { NotePin } from "@/components/demo/Demo";
-import { categoryById, facadeBySlug, facades, limits } from "@/lib/catalog";
+import { DevPlaceholder, IN_DEVELOPMENT, NOT_IN_DEMO } from "@/components/InDevelopment";
+import { categoryById, facadeBySlug, facades, isReady, limits } from "@/lib/catalog";
 import { priceHint } from "@/lib/priceHints";
 
 export function generateStaticParams() {
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: PageProps<"/catalog/[slug]">)
   const { slug } = await params;
   const facade = facadeBySlug(slug);
   if (!facade) return {};
-  return { title: facade.name, description: facade.blurb };
+  return { title: facade.name, description: isReady(facade) ? facade.blurb : `${facade.name}: ${IN_DEVELOPMENT.toLowerCase()}` };
 }
 
 export default async function FacadePage({ params }: PageProps<"/catalog/[slug]">) {
@@ -26,7 +27,8 @@ export default async function FacadePage({ params }: PageProps<"/catalog/[slug]"
 
   const category = categoryById(facade.category);
   // У фасадов без 3D первое фото уже стоит на месте вьюера
-  const gallery = facade.profile ? facade.photos : facade.photos.slice(1);
+  const ready = isReady(facade);
+  const gallery = ready ? facade.photos : [];
 
   return (
     <div className="mx-auto max-w-7xl px-3 py-10 sm:px-5 sm:py-14">
@@ -38,24 +40,19 @@ export default async function FacadePage({ params }: PageProps<"/catalog/[slug]"
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[1.25fr_1fr]">
         <div className="relative">
-          {facade.profile && <NotePin id="facade3d" className="right-3 top-3" />}
-          {facade.profile ? (
-            <FacadeConfigurator
-              profile={facade.profile}
-              widthRange={[100, limits.width[1]]}
-              heightRange={[100, limits.height[1]]}
-              thicknessRange={limits.thickness}
-            />
+          {ready ? (
+            <>
+              <NotePin id="facade3d" className="right-3 top-3" />
+              <FacadeConfigurator
+                profile={facade.profile!}
+                widthRange={[100, limits.width[1]]}
+                heightRange={[100, limits.height[1]]}
+                thicknessRange={limits.thickness}
+              />
+            </>
           ) : (
             <div className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] bg-sand">
-              <Image
-                src={facade.photos[0]}
-                alt={`Фасад «${facade.name}»`}
-                fill
-                priority
-                sizes="(min-width:1024px) 55vw, 100vw"
-                className={facade.category === "radius" ? "object-contain p-8" : "object-cover"}
-              />
+              <DevPlaceholder />
             </div>
           )}
         </div>
@@ -65,18 +62,30 @@ export default async function FacadePage({ params }: PageProps<"/catalog/[slug]"
           <h1 className="mt-3 text-[clamp(2.2rem,4vw,3.4rem)] font-semibold leading-tight tracking-tight text-cocoa">
             {facade.name}
           </h1>
-          <p className="mt-6 text-lg leading-relaxed text-cocoa/70">{facade.blurb}</p>
+          {ready ? (
+            <p className="mt-6 text-lg leading-relaxed text-cocoa/70">{facade.blurb}</p>
+          ) : (
+            <div className="mt-6 rounded-[1.5rem] bg-sand p-6">
+              <p className="text-lg font-semibold text-cocoa">{IN_DEVELOPMENT}</p>
+              <p className="mt-2 text-sm leading-relaxed text-cocoa/65">
+                {NOT_IN_DEMO}: 3D-просмотр, характеристики и цена этой позиции появятся в полной версии сайта. Заказать такой
+                фасад можно уже сейчас, оставьте заявку.
+              </p>
+            </div>
+          )}
 
-          <dl className="mt-10 divide-y divide-cocoa/10 rounded-[1.5rem] bg-sand px-6 text-sm">
-            <Row label="Толщина" value={`${limits.thickness[0]}–${limits.thickness[1]} мм`} />
-            <Row label="Высота" value={`${limits.height[0]}–${limits.height[1]} мм`} />
-            <Row label="Ширина" value={`${limits.width[0]}–${limits.width[1]} мм`} />
-            <Row label="Цвет" value="RAL, NCS, Wood Color, Color System или подбор" />
-            <Row label="Покрытие" value="Матовое или глянцевое" />
-            {priceHint(facade) && <Row label="Цена" value={`${priceHint(facade)}. Точный расчёт в калькуляторе`} />}
-          </dl>
+          {ready && (
+            <dl className="mt-10 divide-y divide-cocoa/10 rounded-[1.5rem] bg-sand px-6 text-sm">
+              <Row label="Толщина" value={`${limits.thickness[0]}–${limits.thickness[1]} мм`} />
+              <Row label="Высота" value={`${limits.height[0]}–${limits.height[1]} мм`} />
+              <Row label="Ширина" value={`${limits.width[0]}–${limits.width[1]} мм`} />
+              <Row label="Цвет" value="RAL, NCS, Wood Color, Color System или подбор" />
+              <Row label="Покрытие" value="Матовое или глянцевое" />
+              {priceHint(facade) && <Row label="Цена" value={`${priceHint(facade)}. Точный расчёт в калькуляторе`} />}
+            </dl>
+          )}
 
-          {facade.swatch && facade.category !== "radius" && (
+          {ready && facade.swatch && facade.category !== "radius" && (
             <div className="mt-8 flex items-center gap-4">
               <Image
                 src={facade.swatch}
@@ -93,7 +102,7 @@ export default async function FacadePage({ params }: PageProps<"/catalog/[slug]"
             href="#order"
             className="mt-10 inline-block rounded-full bg-taupe px-8 py-4 text-sm font-semibold text-white transition-colors hover:bg-cocoa"
           >
-            Заказать «{facade.name}»
+            {ready ? `Заказать «${facade.name}»` : "Узнать о заказе"}
           </Link>
         </div>
       </div>

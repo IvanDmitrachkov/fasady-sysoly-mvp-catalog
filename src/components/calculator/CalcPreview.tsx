@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Image from "next/image";
+import { DevPlaceholder } from "@/components/InDevelopment";
 import { facadeBySlug } from "@/lib/catalog";
 import { optionOf, params, type Row, type RowCalc } from "@/lib/pricing";
 import { swatchById } from "@/lib/palette";
@@ -22,7 +22,7 @@ export function profileOf(row: Row): { profile: ProfileId | null; name: string; 
 }
 
 export default function CalcPreview({ row, calc, index }: { row: Row; calc: RowCalc; index: number }) {
-  const { profile, name, photo } = profileOf(row);
+  const { profile, name } = profileOf(row);
   const swatch = swatchById(row.values.color);
   const gloss = row.values.coating === "gloss";
   const thickness = Number(optionOf(param("thickness"), row.values).id);
@@ -43,11 +43,10 @@ export default function CalcPreview({ row, calc, index }: { row: Row; calc: RowC
           finish={gloss ? "gloss" : "matte"}
         />
       ) : (
-        <div className="absolute inset-0">
-          {photo && <Image src={photo} alt={`Фасад «${name}»`} fill sizes="(min-width:1024px) 26rem, 100vw" className="object-cover opacity-80" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-cocoa/90 via-cocoa/30 to-transparent" />
-          <p className="absolute inset-x-6 top-1/2 -translate-y-1/2 rounded-2xl bg-cocoa/70 p-4 text-center text-sm text-white backdrop-blur">
-            3D-модель для фрезеровки «{name}» в разработке. Цена считается как обычно.
+        <div className="absolute inset-0 bg-cream">
+          <DevPlaceholder />
+          <p className="absolute inset-x-6 bottom-16 text-center text-xs text-cocoa/60">
+            3D для «{name}» в разработке. Цена считается как обычно.
           </p>
         </div>
       )}

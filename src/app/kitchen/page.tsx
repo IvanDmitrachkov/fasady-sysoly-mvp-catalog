@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import KitchenTryOn from "@/components/scene/KitchenTryOn";
 import { NotePin } from "@/components/demo/Demo";
+import { DemoNotice } from "@/components/InDevelopment";
 
 export const metadata: Metadata = {
   title: "Примерить на кухне",
@@ -18,6 +19,7 @@ export default function KitchenPage() {
       <p className="mt-5 mb-10 max-w-xl text-lg text-cocoa/70">
         Выберите цвет фасадов, столешницу и фартук. Свет и тени на фото остаются настоящими.
       </p>
+      <DemoNotice>В демо доступны две кухни. Смена фрезеровки на фото в разработке: меняется только цвет.</DemoNotice>
       <KitchenTryOn />
     </div>
   );

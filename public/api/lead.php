@@ -35,7 +35,7 @@ if ($name === '' || strlen(preg_replace('/\D/', '', $phone)) < 10) {
 $facade = clean($body['facade'] ?? '', 200);
 $comment = clean($body['comment'] ?? '', 2000);
 
-if (LEAD_TO === '') reply(200, ['ok' => true]); // демо-режим, см. LEAD_TO
+if (LEAD_TO === '') reply(200, ['ok' => true, 'demo' => true]); // демо-режим, см. LEAD_TO
 
 $text = "Имя: $name\nТелефон: $phone\nФасад: $facade\nКомментарий: $comment\n";
 $headers = "From: " . LEAD_FROM . "\r\nContent-Type: text/plain; charset=utf-8";

@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
-type Status = "idle" | "sending" | "done" | "error";
+type Status = "idle" | "sending" | "done" | "demo" | "error";
 
 const field =
   "w-full rounded-2xl border border-cocoa/15 bg-cream px-4 py-3 text-base outline-none transition-colors placeholder:text-cocoa/35 focus:border-taupe focus:bg-paper";
@@ -20,7 +20,8 @@ export function LeadForm({ facade = "", comment = "" }: { facade?: string; comme
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      setStatus(res.ok ? "done" : "error");
+      const json = res.ok ? await res.json().catch(() => ({})) : null;
+      setStatus(!res.ok ? "error" : json?.demo ? "demo" : "done");
     } catch {
       setStatus("error");
     }
@@ -31,6 +32,18 @@ export function LeadForm({ facade = "", comment = "" }: { facade?: string; comme
       <div role="status" className="rounded-[1.5rem] bg-sand p-8">
         <p className="text-2xl font-semibold">Заявка отправлена</p>
         <p className="mt-2 text-cocoa/65">Мы свяжемся с вами в ближайшее рабочее время.</p>
+      </div>
+    );
+  }
+
+  if (status === "demo") {
+    return (
+      <div role="status" className="rounded-[1.5rem] bg-sand p-8">
+        <p className="text-2xl font-semibold">Недоступно в демо-режиме</p>
+        <p className="mt-2 text-cocoa/65">
+          Форма проверена, но заявка никуда не ушла: отправка на почту и в Telegram подключается в полной версии. Пока
+          позвоните нам.
+        </p>
       </div>
     );
   }
@@ -71,6 +84,7 @@ export function LeadForm({ facade = "", comment = "" }: { facade?: string; comme
         >
           {status === "sending" ? "Отправляем…" : "Отправить заявку"}
         </button>
+        <span className="text-xs text-cocoa/45">Демо: заявки пока не отправляются</span>
         {status === "error" && (
           <span role="alert" className="text-sm text-red-700">
             Не получилось отправить. Позвоните нам или попробуйте ещё раз.

@@ -243,6 +243,9 @@ export const facades: Facade[] = [
   },
 ];
 
+/** Позиция готова к показу: есть профиль для 3D. Остальные помечаем «В разработке» */
+export const isReady = (f: Facade) => Boolean(f.profile);
+
 export const facadeBySlug = (slug: string) => facades.find((f) => f.slug === slug);
 export const categoryById = (id: CategoryId) => categories.find((c) => c.id === id)!;
 

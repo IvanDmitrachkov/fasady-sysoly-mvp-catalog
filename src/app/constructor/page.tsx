@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ConstructorClient } from "@/components/constructor/ConstructorClient";
 import { NotePin } from "@/components/demo/Demo";
+import { DemoNotice } from "@/components/InDevelopment";
 
 export const metadata: Metadata = {
   title: "Конструктор кухни",
@@ -18,6 +19,7 @@ export default function ConstructorPage() {
       <p className="mt-5 mb-10 max-w-xl text-lg text-cocoa/70">
         Задайте длину стены, расставьте модули и выберите фасады. Мы получим список фасадов с размерами.
       </p>
+      <DemoNotice>Прототип: размеры модулей условные, расчёт цены и угловые кухни в этой версии недоступны.</DemoNotice>
       <ConstructorClient />
     </div>
   );

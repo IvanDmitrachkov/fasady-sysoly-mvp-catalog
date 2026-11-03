@@ -20,14 +20,15 @@ const subscribe = (cb: () => void) => {
 
 const read = () => {
   try {
-    return localStorage.getItem(KEY) === "1";
+    // по умолчанию режим включён, выключает только явный выбор
+    return localStorage.getItem(KEY) !== "0";
   } catch {
-    return false;
+    return true;
   }
 };
 
 function useDemo() {
-  const on = useSyncExternalStore(subscribe, read, () => false);
+  const on = useSyncExternalStore(subscribe, read, () => true);
   const set = (value: boolean) => {
     try {
       localStorage.setItem(KEY, value ? "1" : "0");

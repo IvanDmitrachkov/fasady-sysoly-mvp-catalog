@@ -170,7 +170,7 @@ export default function OrderCalculator() {
                   <div className="mt-5 flex flex-wrap items-baseline justify-between gap-2 border-t border-cocoa/10 pt-4">
                     <p className="text-sm text-cocoa/65">
                       {area(c.area)} м²
-                      {c.billedArea > c.area ? ` (в расчёте ${area(c.billedArea)} м²)` : ""} · {rub(c.rate)}/м² · {rub(c.unit)} за штуку · срок {c.days} дн.
+                      {c.billedArea > c.area ? ` (в расчёте ${area(c.billedArea)} м²)` : ""} · {rub(c.rate)}/м²{c.handleCost ? ` + ручка ${rub(c.handleCost)}` : ""} · {rub(c.unit)} за штуку · срок {c.days} дн.
                     </p>
                     <p className="text-xl font-semibold tabular-nums text-cocoa">{rub(c.total)}</p>
                   </div>
@@ -307,6 +307,7 @@ function Field({ param, row, onChange, onNote }: { param: Param; row: Row; onCha
           {param.options.map((o) => (
             <option key={o.id} value={o.id}>
               {o.label}
+              {o.provisional ? " (цена уточняется)" : ""}
             </option>
           ))}
         </select>

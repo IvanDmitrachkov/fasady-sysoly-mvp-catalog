@@ -1,4 +1,20 @@
-import { facades, limits } from "./catalog";
+import { facades } from "./catalog";
+import {
+  DEFAULT_COLOR_ID,
+  DEFAULT_EDGE_ID,
+  DEFAULT_THICKNESS_ID,
+  EDGE_RADII,
+  HANDLES,
+  MILLING,
+  MIN_BILLED_AREA,
+  PRICE_FROM,
+  RATE_TABLES,
+  RUSH,
+  SIZE_LIMITS,
+  THICKNESS,
+  WHITE_COLOR_ID,
+  type VariantConfig,
+} from "./orderConfig";
 import { swatches } from "./palette";
 
 /**
@@ -9,44 +25,24 @@ import { swatches } from "./palette";
  * Срок = базовый срок + надбавки, затем умножается на коэффициент срочности.
  *
  * Новый параметр добавляется одной записью в `params`: он сам появится в форме, в расчёте и в выгрузке в Excel.
- * Цены меняются только здесь.
+ * Сами варианты и цены заведены в `orderConfig.ts`; здесь только формула.
  */
 
 /** Цены внесены из прайса заказчика */
 export const PRICES_ARE_PLACEHOLDER = false;
 
-/** Минимальная расчётная площадь одного фасада, м² (кроме RAL 9003) */
-export const MIN_BILLED_AREA = 0.5;
-export const WHITE_COLOR_ID = "ral-9003";
-
-/** Надбавка за фрезеровку по каталогу, ₽/м² */
-const MILLING_ADD = 2500;
-
-type Tier = "white" | "ral" | "metal";
-type RateTable = Record<"matte" | "gloss", Record<Tier, { rate: number; days: number }>>;
-
-/** Прямые фасады 16 мм: основа расчёта. ₽/м² и срок, дней */
-const TABLE_16: RateTable = {
-  matte: { white: { rate: 7400, days: 10 }, ral: { rate: 7700, days: 10 }, metal: { rate: 8600, days: 10 } },
-  gloss: { white: { rate: 8900, days: 18 }, ral: { rate: 9200, days: 18 }, metal: { rate: 10100, days: 18 } },
-};
-/** Прямые фасады 10 мм: отдельная таблица цен */
-const TABLE_10: RateTable = {
-  matte: { white: { rate: 6900, days: 15 }, ral: { rate: 7200, days: 15 }, metal: { rate: 7900, days: 15 } },
-  gloss: { white: { rate: 8200, days: 18 }, ral: { rate: 8500, days: 18 }, metal: { rate: 9200, days: 18 } },
-};
+export { MIN_BILLED_AREA, WHITE_COLOR_ID };
 
 /** Цены «от» для каталога: самый дешёвый вариант (16 мм, матовый белый) */
 export const priceFrom = {
-  straight: TABLE_16.matte.white.rate,
-  milled: TABLE_16.matte.white.rate + MILLING_ADD,
-  /** Интегрированная ручка L, U, C, ₽ за погонный метр */
-  handle: 1200,
-  /** Радиусный фасад высотой до 150 мм, матовый, ₽ за штуку */
-  radius: 1600,
+  straight: RATE_TABLES.standard.matte.white.rate,
+  milled: RATE_TABLES.standard.matte.white.rate + MILLING.add,
+  /** Интегрированная ручка, ₽ за погонный метр (самая дешёвая) */
+  handle: Math.min(...HANDLES.flatMap((h) => (h.perMeter ? [h.perMeter] : []))),
+  radius: PRICE_FROM.radius,
 };
 
-export const sizeLimits = { width: limits.width, height: limits.height, qty: [1, 999] as const };
+export const sizeLimits = { width: SIZE_LIMITS.width, height: SIZE_LIMITS.height, qty: SIZE_LIMITS.qty };
 
 export type Option = {
   id: string;
@@ -59,6 +55,11 @@ export type Option = {
   days?: number;
   /** Множитель срока */
   daysMult?: number;
+  /** Цена приблизительная: в форме помечается «цена уточняется» */
+  provisional?: boolean;
+  /** Интегрированная ручка: цена за погонный метр, ₽, и сторона фасада, вдоль которой она идёт */
+  perMeter?: number;
+  side?: "height" | "width";
   /** Цвет для образца */
   hex?: string;
 };
@@ -73,6 +74,8 @@ export type Param = {
   showIf?: (v: Values) => boolean;
 };
 
+const variant = ({ id, label, add, days, provisional }: VariantConfig): Option => ({ id, label, add, days, provisional });
+
 const milled = facades.filter((f) => f.category === "milled");
 
 export const params: Param[] = [
@@ -81,8 +84,7 @@ export const params: Param[] = [
     label: "Тип фасада",
     options: [
       { id: "straight", label: "Прямой" },
-      // фрезеровка по каталогу: +2500 ₽/м², +15 дней
-      { id: "milled", label: "С фрезеровкой", add: MILLING_ADD, days: 15 },
+      { id: "milled", label: "С фрезеровкой", add: MILLING.add, days: MILLING.days },
     ],
   },
   {
@@ -94,12 +96,12 @@ export const params: Param[] = [
   {
     id: "edge",
     label: "Радиус завала торца",
-    options: [
-      { id: "1", label: "R 1 мм" },
-      { id: "3", label: "R 3 мм" },
-      { id: "6", label: "R 6 мм" },
-      { id: "8", label: "R 8 мм" },
-    ],
+    options: EDGE_RADII.map((r) => ({ id: String(r), label: r === 0 ? "Без завала" : `R ${r} мм` })),
+  },
+  {
+    id: "handle",
+    label: "Интегрированная ручка",
+    options: HANDLES.map(({ id, label, side, perMeter, provisional }) => ({ id, label, side, perMeter, provisional })),
   },
   {
     id: "color",
@@ -125,26 +127,14 @@ export const params: Param[] = [
   {
     id: "thickness",
     label: "Толщина, мм",
-    // 10 мм считается по своей таблице, остальные: 16 мм плюс надбавка
-    options: [
-      { id: "10", label: "10" },
-      { id: "16", label: "16" },
-      { id: "19", label: "19", add: 600 },
-      { id: "22", label: "22", add: 1600 },
-      { id: "24", label: "24", add: 2400 },
-      { id: "38", label: "38", add: 3200, days: 5 },
-    ],
+    options: THICKNESS.map(variant),
   },
   {
     id: "rush",
     label: "Срочность",
     // срочное изготовление только для прямых фасадов
     showIf: (v) => v.type === "straight",
-    options: [
-      { id: "normal", label: "Обычная" },
-      { id: "rush25", label: "Быстрее на 25% (+25% к цене)", mult: 1.25, daysMult: 0.75 },
-      { id: "rush50", label: "Быстрее на 50% (+50% к цене)", mult: 1.5, daysMult: 0.5 },
-    ],
+    options: RUSH,
   },
 ];
 
@@ -162,9 +152,11 @@ export const newRowId = () => `r${Date.now().toString(36)}${(counter++).toString
 
 export const isVisible = (p: Param, v: Values) => !p.showIf || p.showIf(v);
 
+const DEFAULTS: Record<string, string> = { color: DEFAULT_COLOR_ID, thickness: DEFAULT_THICKNESS_ID, edge: DEFAULT_EDGE_ID };
+
 export const defaultValues = (): Values => {
   const v: Values = {};
-  for (const p of params) v[p.id] = p.id === "color" ? "ral-7040" : p.id === "thickness" ? "16" : p.options[0].id;
+  for (const p of params) v[p.id] = DEFAULTS[p.id] ?? p.options[0].id;
   return v;
 };
 
@@ -193,13 +185,15 @@ export type RowCalc = {
   rate: number;
   /** Срок изготовления, дней */
   days: number;
+  /** Из цены штуки: интегрированная ручка, ₽ */
+  handleCost: number;
   unit: number;
   total: number;
 };
 
 function baseOf(v: Values) {
-  const table = v.thickness === "10" ? TABLE_10 : TABLE_16;
-  const tier: Tier = v.effect === "metal" ? "metal" : v.color === WHITE_COLOR_ID ? "white" : "ral";
+  const table = RATE_TABLES[THICKNESS.find((t) => t.id === v.thickness)?.table ?? "standard"];
+  const tier: "white" | "ral" | "metal" = v.effect === "metal" ? "metal" : v.color === WHITE_COLOR_ID ? "white" : "ral";
   return table[v.coating === "gloss" ? "gloss" : "matte"][tier];
 }
 
@@ -228,8 +222,10 @@ export function calcRow(row: Row): RowCalc {
     (base.rate + visible.reduce((s, o) => s + (o.add ?? 0), 0)) * visible.reduce((m, o) => m * (o.mult ?? 1), 1),
   );
   const days = Math.ceil((base.days + visible.reduce((s, o) => s + (o.days ?? 0), 0)) * visible.reduce((m, o) => m * (o.daysMult ?? 1), 1));
-  const unit = Math.round(billedArea * rate);
-  return { width, height, qty, errors, area, billedArea, rate, days, unit, total: unit * qty };
+  const handle = visible.find((o) => o.perMeter);
+  const handleCost = handle ? Math.round(((handle.side === "width" ? width : height) / 1000) * handle.perMeter!) : 0;
+  const unit = Math.round(billedArea * rate) + handleCost;
+  return { width, height, qty, errors, area, billedArea, rate, days, handleCost, unit, total: unit * qty };
 }
 
 export const hasErrors = (c: RowCalc) => Object.keys(c.errors).length > 0;

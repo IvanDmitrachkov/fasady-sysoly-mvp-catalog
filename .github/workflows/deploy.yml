@@ -1,8 +1,7 @@
 name: Deploy to Beget
 
+# автодеплой отключён (переезд на другой хостинг), запуск только вручную
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:

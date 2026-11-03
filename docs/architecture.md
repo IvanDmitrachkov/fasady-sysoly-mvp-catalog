@@ -6,7 +6,7 @@
 
 | Слой | Технология |
 |---|---|
-| Фреймворк | Next.js 16 (App Router, Turbopack, статический экспорт `output: "export"`), React 19 |
+| Фреймворк | Next.js 16 (App Router, Turbopack, Node-сервер), React 19 |
 | Язык | TypeScript |
 | Стили | Tailwind CSS 4 + токены в `src/app/globals.css` |
 | 3D | three.js 0.187, `@react-three/fiber` 9, `@react-three/drei` 10 |

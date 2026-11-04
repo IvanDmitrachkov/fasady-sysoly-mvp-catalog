@@ -1,13 +1,29 @@
 /**
- * План внедрения проекта (этапы 1–3, отложенные идеи, дополнительные вопросы).
+ * План внедрения проекта (этапы 1–3, отложенные идеи, ориентиры по стоимости).
  * Источник правды вместе с docs/implementation-plan.md — при изменении обновляйте оба.
  */
+export type StageMaterialAddon = {
+  id: string;
+  title: string;
+  description: string;
+  /** Доп. услуга разработчика */
+  serviceLabel: string;
+  priceRub: number;
+  /** Если заказчик не заказывает генерацию */
+  alternative: string;
+};
+
 export type ImplementationStage = {
   id: string;
   number: number;
   title: string;
   items: string[];
   result: string;
+  priceRub: number;
+  /** Пояснение к цене этапа */
+  priceNote?: string;
+  /** Только для этапа 1: блок про картинки кухонь */
+  materialAddon?: StageMaterialAddon;
 };
 
 export type DeferredIdea = {
@@ -16,13 +32,6 @@ export type DeferredIdea = {
   description: string;
   reasons: string[];
   proposal: string;
-};
-
-export type AdditionalQuestion = {
-  id: string;
-  title: string;
-  description: string;
-  options: string[];
 };
 
 export const implementationStages: ImplementationStage[] = [
@@ -37,6 +46,16 @@ export const implementationStages: ImplementationStage[] = [
       "Возможность отправить заявку без расчёта стоимости.",
     ],
     result: "Клиент может посмотреть фасады и оставить заявку на интересующую продукцию.",
+    priceRub: 40_000,
+    materialAddon: {
+      id: "kitchen-images",
+      title: "Картинки кухонь с фасадами",
+      description:
+        "Для главной, каталога и промо-блоков нужны качественные интерьеры с вашими фасадами — не только схемы и 3D.",
+      serviceLabel: "Генерация и подбор красивых картинок",
+      priceRub: 10_000,
+      alternative: "Либо заказчик сам предоставляет готовые фото и материалы для публикации.",
+    },
   },
   {
     id: "pdf",
@@ -48,6 +67,8 @@ export const implementationStages: ImplementationStage[] = [
       "Создание и получение PDF непосредственно на сайте.",
     ],
     result: "Готовый каталог продукции можно получить в PDF без ручной подготовки.",
+    priceRub: 10_000,
+    priceNote: "Дешевле первого этапа: картинки и контент уже есть после каталога.",
   },
   {
     id: "calculator",
@@ -59,6 +80,9 @@ export const implementationStages: ImplementationStage[] = [
       "Форма заказа с автоматическим добавлением всех выбранных параметров из калькулятора.",
     ],
     result: "Клиент может рассчитать примерную стоимость и отправить заявку с параметрами заказа.",
+    priceRub: 30_000,
+    priceNote:
+      "При условии, что заказчик предоставит в понятной форме правила расчёта стоимости и не будет слишком сложных условий.",
   },
 ];
 
@@ -90,18 +114,11 @@ export const deferredIdeas: DeferredIdea[] = [
   },
 ];
 
-export const additionalQuestions: AdditionalQuestion[] = [
-  {
-    id: "kitchen-images",
-    title: "Картинки кухонь с фасадами",
-    description:
-      "Для каталога, главной и других блоков сайта нужны качественные изображения интерьеров с вашими фасадами — не только схемы и 3D.",
-    options: [
-      "Генерация и подбор красивых картинок — отдельная дополнительная услуга.",
-      "Либо заказчик сам предоставляет готовые фото и материалы для публикации.",
-    ],
-  },
-];
+/** Сумма этапов 1–3 (без конструктора и подбора кухни; опция картинок — отдельно) */
+export const implementationStagesTotalRub = implementationStages.reduce((s, st) => s + st.priceRub, 0);
 
 export const implementationSummary =
   "Сначала делаем полезный каталог, затем PDF-каталог и калькулятор. Сложные дополнительные инструменты пока не включаем в обязательный план разработки.";
+
+export const implementationPriceDisclaimer =
+  "Цены ориентировочные, не коммерческое предложение. Итог зависит от объёма правок, материалов от заказчика и согласованного состава работ.";

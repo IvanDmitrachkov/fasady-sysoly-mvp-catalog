@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LeadForm } from "@/components/LeadForm";
+import { facades } from "@/lib/catalog";
 import { backsplashes, scenes, worktops, type KitchenScene, type Surface } from "@/lib/scenes";
 import ColorPicker from "@/components/ColorPicker";
-import { DemoPhotoBadge } from "@/components/InDevelopment";
+import { DemoPhotoBadge, DevPlaceholder } from "@/components/InDevelopment";
 import { swatchById } from "@/lib/palette";
 import { hexToLinear, prepare, render, type Prepared, type Target } from "@/lib/recolor";
 
@@ -28,6 +29,17 @@ function readPixels(img: HTMLImageElement): ImageData {
 
 const target = (hex: string | null, contrast: number, grain = false): Target | null =>
   hex ? { linear: hexToLinear(hex), contrast, grain } : null;
+
+/** Прямой фасад — базовое фото. Остальные — каталог фрезеровок, фото лежит в scene.variants. */
+const millings = [
+  { slug: "pryamoy", name: "Прямой" },
+  ...facades.filter((f) => f.category === "milled").map((f) => ({ slug: f.slug, name: f.name })),
+];
+
+function millingPhoto(scene: KitchenScene, slug: string): string | null {
+  if (slug === "pryamoy") return scene.base;
+  return scene.variants?.[slug] ?? null;
+}
 
 export default function KitchenTryOn() {
   const [sceneId, setSceneId] = useState(scenes[0].id);
@@ -62,8 +74,10 @@ function Stage({ scene }: { scene: KitchenScene }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const outRef = useRef<ImageData | null>(null);
   const [prepared, setPrepared] = useState<Prepared | null>(null);
+  const [preparedFor, setPreparedFor] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
+  const [millingSlug, setMillingSlug] = useState("pryamoy");
   const [facadeId, setFacadeId] = useState<string | null>(null);
   const [worktopId, setWorktopId] = useState("orig");
   const [backsplashId, setBacksplashId] = useState("orig");
@@ -71,27 +85,33 @@ function Stage({ scene }: { scene: KitchenScene }) {
   const [prefill, setPrefill] = useState("");
 
   // null — фасады как на фото
+  const milling = millings.find((m) => m.slug === millingSlug) ?? millings[0];
+  const photo = millingPhoto(scene, milling.slug);
   const facade = facadeId ? swatchById(facadeId) : null;
   const worktop = worktops.find((s) => s.id === worktopId)!;
   const backsplash = backsplashes.find((s) => s.id === backsplashId)!;
   const accent = accentId ? swatchById(accentId) : null;
 
   useEffect(() => {
+    if (!photo) return;
     let cancelled = false;
+    const src = photo;
     Promise.all([
-      loadImage(scene.base),
+      loadImage(src),
       loadImage(scene.masks),
       scene.masks2 ? loadImage(scene.masks2) : Promise.resolve(null),
     ])
       .then(([base, masks, accentMask]) => {
         if (cancelled) return;
+        setFailed(false);
         setPrepared(prepare(readPixels(base), readPixels(masks), accentMask ? readPixels(accentMask) : undefined));
+        setPreparedFor(src);
       })
       .catch(() => !cancelled && setFailed(true));
     return () => {
       cancelled = true;
     };
-  }, [scene]);
+  }, [scene, photo]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -116,7 +136,7 @@ function Stage({ scene }: { scene: KitchenScene }) {
     ctx.putImageData(outRef.current, 0, 0);
   }, [prepared, facade, worktop, backsplash, accent]);
 
-  const summary = `Фасады: ${facade ? `${facade.code} ${facade.name}` : "как на фото"}; столешница: ${worktop.name}; фартук: ${backsplash.name}${scene.masks2 ? `; акцент: ${accent ? `${accent.code} ${accent.name}` : "как на фото"}` : ""}`;
+  const summary = `Фрезеровка: ${milling.name}; фасады: ${facade ? `${facade.code} ${facade.name}` : "как на фото"}; столешница: ${worktop.name}; фартук: ${backsplash.name}${scene.masks2 ? `; акцент: ${accent ? `${accent.code} ${accent.name}` : "как на фото"}` : ""}`;
 
   return (
     <div>
@@ -127,15 +147,20 @@ function Stage({ scene }: { scene: KitchenScene }) {
         >
           {/* Исходное фото видно сразу и без JS; канвас с перекраской ложится поверх */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={scene.base} alt={scene.alt} width={scene.width} height={scene.height} className="absolute inset-0 h-full w-full" />
+          <img src={photo ?? scene.base} alt={scene.alt} width={scene.width} height={scene.height} className="absolute inset-0 h-full w-full" />
           <canvas
             ref={canvasRef}
             width={scene.width}
             height={scene.height}
             aria-hidden
-            className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${prepared ? "opacity-100" : "opacity-0"}`}
+            className={`absolute inset-0 h-full w-full transition-opacity duration-300 ${prepared && preparedFor === photo ? "opacity-100" : "opacity-0"}`}
           />
           <DemoPhotoBadge className="left-3 top-3" />
+          {!photo && (
+            <div className="absolute inset-0 z-20">
+              <DevPlaceholder />
+            </div>
+          )}
           {failed && (
             <p className="absolute inset-x-0 bottom-0 bg-cocoa/80 p-3 text-center text-sm text-white">
               Не удалось загрузить примерочную. Попробуйте обновить страницу.
@@ -144,6 +169,30 @@ function Stage({ scene }: { scene: KitchenScene }) {
         </div>
 
         <div className="grid gap-8">
+          <Group title="Фрезеровка" hint={milling.name}>
+            {millings.map((m) => {
+              const ready = millingPhoto(scene, m.slug) !== null;
+              const active = m.slug === milling.slug;
+              return (
+                <button
+                  key={m.slug}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  title={ready ? m.name : "Недоступно в демо-режиме"}
+                  onClick={() => {
+                    setFailed(false);
+                    setMillingSlug(m.slug);
+                  }}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                    active ? "border-cocoa bg-cocoa text-white" : "border-cocoa/15 hover:border-cocoa"
+                  }`}
+                >
+                  {m.name}
+                </button>
+              );
+            })}
+          </Group>
           <div>
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-cocoa/60">Цвет фасадов</h2>
             <ColorPicker value={facadeId} allowCustom={false} onChange={setFacadeId} onReset={() => setFacadeId(null)} />
@@ -183,7 +232,7 @@ function Stage({ scene }: { scene: KitchenScene }) {
         <div>
           <h2 className="text-3xl font-semibold leading-tight tracking-tight text-cocoa">Рассчитать стоимость</h2>
           <p className="mt-4 max-w-sm text-cocoa/70">
-            Выбранные цвета подставятся в заявку. Размеры и фрезеровку уточним по телефону.
+            Выбранные фрезеровка и цвета подставятся в заявку. Размеры уточним по телефону.
           </p>
         </div>
         <LeadForm key={prefill} facade={prefill} />

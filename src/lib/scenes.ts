@@ -15,6 +15,11 @@ export type KitchenScene = {
   /** Маска акцентных зон, если они размечены в сцене */
   masks2?: string;
   accentLabel?: string;
+  /**
+   * Другие фото той же кухни: ключ — slug фрезеровки из каталога.
+   * «Прямой» всегда берётся из base. Нет файла — в демо фрезеровка недоступна.
+   */
+  variants?: Record<string, string>;
   width: number;
   height: number;
   alt: string;
@@ -28,6 +33,10 @@ export const scenes: KitchenScene[] = [
     masks: "/scenes/corner-1/masks.png",
     masks2: "/scenes/corner-1/masks2.png",
     accentLabel: "Акцент: колонны",
+    variants: {
+      step: "/scenes/corner-1/step.jpg",
+      "volna-1": "/scenes/corner-1/volna-1.jpg",
+    },
     width: 1472,
     height: 1840,
     alt: "Угловая кухня с светлыми безручковыми фасадами",

@@ -35,11 +35,15 @@ export function SiteFooter() {
             <li><Link href="/catalog" className="hover:underline">Каталог фасадов</Link></li>
             <li><Link href="/#services" className="hover:underline">Услуги</Link></li>
             <li><Link href="/#how" className="hover:underline">Как заказать</Link></li>
+            <li><Link href="/offer" className="hover:underline">План внедрения</Link></li>
           </ul>
         </div>
       </div>
       <p className="mx-auto mt-4 max-w-7xl px-2 text-center text-xs text-cocoa/55">
-        Демо-версия: картинки, тексты и цвета временные. <Link href="/offer#review" className="underline underline-offset-2 hover:no-underline">Что готово и что будет улучшено</Link>
+        Демо-версия: картинки, тексты и цвета временные.{" "}
+        <Link href="/offer" className="underline underline-offset-2 hover:no-underline">
+          План внедрения проекта
+        </Link>
       </p>
     </footer>
   );

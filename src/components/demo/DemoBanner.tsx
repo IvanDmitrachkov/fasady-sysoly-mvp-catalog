@@ -25,8 +25,8 @@ export function DemoBanner() {
   return (
     <div className="bg-amber-200 px-3 py-2 text-center text-xs text-cocoa sm:text-sm" role="note">
       <span className="font-semibold">Демо-версия.</span> Картинки и материалы временные, мы ещё доработаем их.{" "}
-      <Link href="/offer#review" className="font-semibold underline underline-offset-2 hover:no-underline">
-        Что посмотреть и что готово
+      <Link href="/offer" className="font-semibold underline underline-offset-2 hover:no-underline">
+        План внедрения
       </Link>
       <button
         type="button"

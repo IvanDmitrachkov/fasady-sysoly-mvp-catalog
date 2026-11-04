@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { imageNotice, reviewFeatures, statusInfo, type ReviewFeature } from "@/lib/review";
 
+/** Карта готовности для заказчика; сейчас не подключена — на `/offer` показывается план внедрения. */
+
 const eyebrow = "text-xs font-semibold uppercase tracking-[0.2em] text-taupe";
 const route = reviewFeatures.filter((f) => f.step).sort((a, b) => a.step! - b.step!);
 

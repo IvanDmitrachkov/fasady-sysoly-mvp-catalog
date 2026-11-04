@@ -50,7 +50,7 @@ export function DemoToggle() {
           href="/offer"
           className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-cocoa shadow-lg ring-1 ring-cocoa/15 transition-colors hover:bg-sand"
         >
-          Доработки
+          План внедрения
         </Link>
       )}
       <button

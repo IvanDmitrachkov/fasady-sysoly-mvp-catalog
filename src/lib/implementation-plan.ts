@@ -2,6 +2,7 @@
  * План внедрения проекта (этапы 1–3, отложенные идеи, ориентиры по стоимости).
  * Источник правды вместе с docs/implementation-plan.md — при изменении обновляйте оба.
  */
+import { rub } from "./offer";
 export type StageMaterialAddon = {
   id: string;
   title: string;
@@ -117,8 +118,26 @@ export const deferredIdeas: DeferredIdea[] = [
 /** Сумма этапов 1–3 (без конструктора и подбора кухни; опция картинок — отдельно) */
 export const implementationStagesTotalRub = implementationStages.reduce((s, st) => s + st.priceRub, 0);
 
+/** Этап 1 + опция «картинки кухонь» (оригинальные ₽, в UI см. showImplementationPricesOnSite) */
+export const implementationTotalWithKitchenImagesRub =
+  implementationStagesTotalRub + (implementationStages[0]?.materialAddon?.priceRub ?? 0);
+
 export const implementationSummary =
   "Сначала делаем полезный каталог, затем PDF-каталог и калькулятор. Сложные дополнительные инструменты пока не включаем в обязательный план разработки.";
 
 export const implementationPriceDisclaimer =
   "Цены ориентировочные, не коммерческое предложение. Итог зависит от объёма правок, материалов от заказчика и согласованного состава работ.";
+
+/** Сноска к суммам с * на `/offer` */
+export const implementationPriceAsteriskNote =
+  "* Суммы указаны «от …» и не учитывают детали: уточнения по ходу работ, дополнительные правки и согласования. Финальная стоимость — после обсуждения состава.";
+
+/** Подпись цены на странице плана: «от 40 000 ₽*». prefix «+» — для доп. услуги («+ от 10 000 ₽*»). */
+export function formatImplementationPrice(amountRub: number, prefix = "") {
+  return `${prefix}от ${rub(amountRub)}*`;
+}
+
+/**
+ * Показывать ли ориентиры в ₽ на `/offer`. Цифры всегда в priceRub этапов и в docs/implementation-plan.md.
+ */
+export const showImplementationPricesOnSite = true;

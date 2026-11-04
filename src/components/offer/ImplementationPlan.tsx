@@ -1,13 +1,50 @@
 import {
   deferredIdeas,
+  formatImplementationPrice,
+  implementationPriceAsteriskNote,
   implementationPriceDisclaimer,
   implementationStages,
   implementationStagesTotalRub,
   implementationSummary,
+  implementationTotalWithKitchenImagesRub,
+  showImplementationPricesOnSite,
   type ImplementationStage,
   type StageMaterialAddon,
 } from "@/lib/implementation-plan";
-import { rub } from "@/lib/offer";
+
+type PriceVisual = "onDark" | "onLight" | "largeDark";
+
+function HiddenPrice({ visual }: { visual: PriceVisual }) {
+  const bar =
+    visual === "largeDark"
+      ? "h-10 w-36 sm:w-40"
+      : visual === "onDark"
+        ? "h-7 w-28"
+        : "h-8 w-32 bg-cocoa/15";
+
+  return (
+    <span className="inline-block select-none" aria-hidden>
+      <span className={`block rounded-full blur-lg ${visual === "onLight" ? bar : `bg-white/35 ${bar}`}`} />
+    </span>
+  );
+}
+
+function PriceLine({
+  amountRub,
+  prefix = "",
+  className = "",
+  visual = "onLight",
+}: {
+  amountRub: number;
+  prefix?: string;
+  className?: string;
+  visual?: PriceVisual;
+}) {
+  if (!showImplementationPricesOnSite) {
+    return <HiddenPrice visual={visual} />;
+  }
+  return <span className={`tabular-nums ${className}`}>{formatImplementationPrice(amountRub, prefix)}</span>;
+}
 
 function MaterialAddon({ addon }: { addon: StageMaterialAddon }) {
   return (
@@ -20,8 +57,10 @@ function MaterialAddon({ addon }: { addon: StageMaterialAddon }) {
       <div className="grid gap-px bg-cocoa/10 sm:grid-cols-2">
         <div className="bg-white/60 px-4 py-4 sm:px-5">
           <p className="text-sm font-medium text-cocoa">{addon.serviceLabel}</p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-cocoa">+{rub(addon.priceRub)}</p>
-          <p className="mt-1 text-xs text-cocoa/55">Дополнительная услуга к этапу 1</p>
+          <div className="mt-3">
+            <PriceLine amountRub={addon.priceRub} prefix="+ " visual="onLight" />
+          </div>
+          <p className="mt-2 text-xs text-cocoa/55">Дополнительная услуга к этапу 1</p>
         </div>
         <div className="flex items-center bg-sand/50 px-4 py-4 sm:px-5">
           <p className="text-sm leading-relaxed text-cocoa/80">
@@ -53,13 +92,21 @@ function StageCard({ stage }: { stage: ImplementationStage }) {
             </h2>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1 text-right">
-          <span className="rounded-full bg-cocoa px-4 py-2 text-sm font-semibold tabular-nums text-white">
-            {rub(stage.priceRub)}
-          </span>
-          {maxWithImages !== null && (
-            <span className="text-xs text-cocoa/60">
-              до {rub(maxWithImages)} с&nbsp;картинками
+        <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
+          {showImplementationPricesOnSite ? (
+            <>
+              <span className="rounded-full bg-cocoa px-4 py-2 text-sm font-semibold tabular-nums text-white">
+                {formatImplementationPrice(stage.priceRub)}
+              </span>
+              {maxWithImages !== null && (
+                <span className="text-xs tabular-nums text-cocoa/60">
+                  {formatImplementationPrice(maxWithImages)} с&nbsp;картинками
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="rounded-full bg-cocoa px-3 py-2">
+              <HiddenPrice visual="onDark" />
             </span>
           )}
         </div>
@@ -90,19 +137,21 @@ function StageCard({ stage }: { stage: ImplementationStage }) {
 }
 
 export default function ImplementationPlan() {
-  const kitchenAddon = implementationStages[0]?.materialAddon?.priceRub ?? 0;
-
   return (
     <div className="mt-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4 rounded-[1.5rem] bg-cocoa px-5 py-5 text-white sm:px-7 sm:py-6">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">Ориентир по этапам 1–3</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums sm:text-3xl">{rub(implementationStagesTotalRub)}</p>
-          <p className="mt-1 text-sm text-white/65">Без конструктора и подбора кухни</p>
+          <div className="mt-2 text-2xl font-semibold sm:text-3xl">
+            <PriceLine amountRub={implementationStagesTotalRub} visual="largeDark" />
+          </div>
+          <p className="mt-2 text-sm text-white/65">Без конструктора и подбора кухни</p>
         </div>
         <div className="text-right">
           <p className="text-sm text-white/65">С подбором картинок на этапе 1</p>
-          <p className="mt-0.5 text-xl font-semibold tabular-nums">{rub(implementationStagesTotalRub + kitchenAddon)}</p>
+          <div className="mt-2 flex justify-end text-xl font-semibold">
+            <PriceLine amountRub={implementationTotalWithKitchenImagesRub} visual="largeDark" />
+          </div>
         </div>
       </div>
 
@@ -145,9 +194,12 @@ export default function ImplementationPlan() {
         <span className="font-semibold">Общий подход:</span> {implementationSummary}
       </p>
 
-      <p className="mt-4 max-w-3xl text-sm leading-relaxed text-cocoa/60" role="note">
-        {implementationPriceDisclaimer}
-      </p>
+      {showImplementationPricesOnSite && (
+        <div className="mt-4 max-w-3xl space-y-2 text-sm leading-relaxed text-cocoa/60" role="note">
+          <p>{implementationPriceAsteriskNote}</p>
+          <p>{implementationPriceDisclaimer}</p>
+        </div>
+      )}
 
       <p className="mt-6 max-w-3xl text-sm leading-relaxed text-cocoa/65" role="note">
         Текущий сайт — демо-прототип: часть функций (калькулятор, конструктор, примерочная) уже показана для обсуждения,

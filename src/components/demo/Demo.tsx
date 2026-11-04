@@ -27,44 +27,8 @@ const read = () => {
   }
 };
 
-function useDemo() {
-  const on = useSyncExternalStore(subscribe, read, () => true);
-  const set = (value: boolean) => {
-    try {
-      localStorage.setItem(KEY, value ? "1" : "0");
-    } catch {
-      /* хранилище недоступно */
-    }
-    listeners.forEach((l) => l());
-  };
-  return [on, set] as const;
-}
-
-/** Кнопка включения режима демо: стикеры с пояснениями на блоках страниц */
-export function DemoToggle() {
-  const [on, set] = useDemo();
-  return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2">
-      {on && (
-        <Link
-          href="/offer"
-          className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-cocoa shadow-lg ring-1 ring-cocoa/15 transition-colors hover:bg-sand"
-        >
-          План внедрения
-        </Link>
-      )}
-      <button
-        type="button"
-        onClick={() => set(!on)}
-        aria-pressed={on}
-        className={`rounded-full px-5 py-3 text-sm font-semibold shadow-lg transition-colors ${
-          on ? "bg-amber-300 text-cocoa" : "bg-cocoa text-white hover:bg-taupe"
-        }`}
-      >
-        {on ? "Режим демо: вкл" : "Режим демо"}
-      </button>
-    </div>
-  );
+function useDemoOn() {
+  return useSyncExternalStore(subscribe, read, () => true);
 }
 
 /** Карточка не должна вылезать за края окна: сдвигаем по горизонтали */
@@ -74,7 +38,7 @@ function fit(el: HTMLDivElement | null) {
   const r = el.getBoundingClientRect();
   const m = 12;
   const top = 76; // под закреплённой шапкой
-  const bottom = window.innerHeight - 76; // над кнопками демо
+  const bottom = window.innerHeight - m;
   let dx = 0;
   let dy = 0;
   if (r.right > window.innerWidth - m) dx = window.innerWidth - m - r.right;
@@ -89,7 +53,7 @@ function fit(el: HTMLDivElement | null) {
  * Его можно перетащить: смещение живёт только в памяти страницы и не сохраняется.
  */
 export function NotePin({ id, className = "left-3 top-3" }: { id: DemoNoteId; className?: string }) {
-  const [on] = useDemo();
+  const on = useDemoOn();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });

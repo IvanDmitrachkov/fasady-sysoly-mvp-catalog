@@ -3,7 +3,6 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { DemoToggle } from "@/components/demo/Demo";
 import { DemoBanner } from "@/components/demo/DemoBanner";
 
 const montserrat = Montserrat({
@@ -29,7 +28,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
-        <DemoToggle />
       </body>
     </html>
   );
